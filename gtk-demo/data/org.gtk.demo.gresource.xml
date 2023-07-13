@@ -1,0 +1,5 @@
+<gresources>
+    <gresource prefix='/org/gtk/demo'>
+        <file preprocess='xml-stripblanks'>gd-window.ui</file>
+    </gresource>
+</gresources>

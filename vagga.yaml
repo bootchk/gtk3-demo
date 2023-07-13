@@ -1,0 +1,122 @@
+# Vagga script to build gtk-deom using meson and clang
+
+# Derived quickly from one for Gimp: some stuff may not be needed
+
+# To use this, install vagga, cd to the parent dir, and
+#> vagga --use-env DISPLAY run
+# Expect the demo window to appear
+
+containers:
+
+  # basic OS with dev (compiling)
+  baseOS:
+    setup:
+    # jammy, kinetic, lunar
+    - !Ubuntu lunar
+
+    # Enable universe repo, where many packages live
+    - !UbuntuUniverse
+
+    # tools for dev (C compiler)
+    - !Install [build-essential]
+
+    # - !Install [gdb]
+    - !Install [meson]
+
+    # clang versus gcc
+    - !Install [clang]
+    # gnu ld vs llvm's lld (installs as ld.lld)
+    - !Install [lld]
+
+    # meson and autotools use pkg-config
+    - !Install [pkg-config]
+
+    # package comprises glib, gobject, and gio
+    - !Install [glib2.0-dev]
+
+    # accessibility toolkit
+    - !Install [ libatk1.0-dev]
+
+    #image metadata
+    - !Install [ libgexiv2-dev]
+
+    # graphics toolkit: GTK and GDK
+    - !Install [ libgtk-3-dev]
+
+    # remove DNS file that vagga will recreate after build
+    # !!! You must do this last, and not at the beginning of a container build
+    - !Sh "rm /etc/resolv.conf"
+
+    # Larger /tmp for testing
+    # 100Mi is default, not enough to create many image files
+    volumes:
+      /tmp: !Tmpfs { size: 500Mi, mode: 0o1777 }
+
+    environ:
+      HOME: /work/.home
+
+
+  # Container ready to build foo
+  # Build directory is not in the container.
+  # foo is not built or installed in the container
+
+  # The container should NOT automatically rebuild if /work/foo source changes
+  # But if you change a meson.build file, you need to rebuild this container??
+
+
+  gtkdemoMesonDev:
+    setup:
+    - !Container baseOS
+
+    # This container NOT depend on changed foo source
+    # Note that meson builds out of tree, i.e. does not touch foo directory
+
+    - !Env  XDG_DATA_DIRS: "/usr/local/share:/usr/share"
+    - !Env LD_LIBRARY_PATH: "/usr/local/lib/x86_64-linux-gnu:/usr/lib"
+    - !Env PKG_CONFIG_PATH: "/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/local/lib/x86_64-linux-gnu/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig"
+
+    # setup build outside the source tree
+
+    # --wipe
+
+    - !Sh |
+        # cd to source dir, a git repo usually
+        cd /work/gtk-demo
+        CC=clang CXX=clang CC_LD=lld CXX_LD=lld meson setup /work/gtk-demoBuild
+
+
+
+
+commands:
+
+  run: !Command
+    description: Build, install, run gtkdemo in gtkdemoMesonDev container
+    container:  gtkdemoMesonDev
+    write-mode: transient-hard-link-copy
+    run: |
+      # Setup env, the container does not do this
+      export LD_LIBRARY_PATH=/usr/local/lib/x86_64-linux-gnu:/usr/local/lib
+      export HOME=/work/.home
+      export GIMP_PREFIX=/usr/local
+      export XDG_DATA_DIRS=/usr/local/share:/usr/share
+      export GI_TYPELIB_PATH=/usr/local/lib/x86_64-linux-gnu/girepository-1.0:/usr/local/lib/girepository-1.0
+      export NO_AT_BRIDGE=1
+
+      export G_MESSAGES_DEBUG=all
+
+      cd /work/gtk-demoBuild
+
+      # remove the old executable we expect to build
+      rm /work/gtk-demoBuild/src/gtk-demo
+
+      echo "lkk meson clang compile"
+      meson compile --verbose -j 8
+
+      # meson.build lacks install info
+      # We don't do this:
+      #meson install
+
+      echo "lkk execute out of build dir"
+      /work/gtk-demoBuild/src/gtk-demo
+
+
