@@ -38,5 +38,7 @@ Using Macports on MacOS:
     move PortFile to ~/ports/graphics/gtk3Demo
     cd ~/ports
     portindex
-    sudo port -nR install gtk3Demo +local +quartz
+    sudo port -nR install gtk3Demo +quartz
     gtk3-demo
+
+You may need to futz with the URLs or clone locally and use +local variant
