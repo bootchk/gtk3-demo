@@ -2,7 +2,7 @@ A small demo of a gtk3 app.
 
 Used to test "App Menu" and menubar at top of screen on MacOS
 versus menubar at top of window on Linux.
-Chasing down a possible bug in Gtk3 re radio button menu items not appearing
+Chasing down an issue with radio button menu items not behaving
 on MacOS.
 So what is demoed is only the topmost part of an app, with a radio button group of menu items.
 
@@ -27,3 +27,16 @@ not tracked in git:
 
        .vagga containers managed by vagga
        gtk-demoBuild the build dir managed by meson
+       
+Using vagga on Linux, to build and run:
+
+     cd to the project dir where vagga.yaml is
+     vagga --use-env DISPLAY run
+     
+Using Macports on MacOS:
+
+    move PortFile to ~/ports/graphics/gtk3Demo
+    cd ~/ports
+    portindex
+    sudo port -nR install gtk3Demo +local +quartz
+    gtk3-demo

@@ -7,7 +7,8 @@ sources = [
 
 sources += gdresources
 
-executable ('gtk-demo',
+executable ('gtk3-demo',
             sources,
-            dependencies : gd_dep
+            dependencies : gd_dep,
+            install : true
 )
